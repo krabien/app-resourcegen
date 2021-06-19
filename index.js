@@ -31,7 +31,8 @@ async function icon() {
     fs.mkdirSync(OUT_DIR, { recursive: true });
     for (const target of targetCandidates) {
         console.log(' > ', target.path);
-        const outfile = target.path.replace(/\//g, '_');
+        let outfile = target.path;
+        // outfile = outfile.replace(/\//g, '_');
         const outPath = path.join(OUT_DIR, outfile);
         await render(candidate, target.width, target.height, 0, outPath);
     }
