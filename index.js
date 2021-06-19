@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const sharp = require('sharp');
 const glob = require('glob');
+
+const OUT_DIR = 'app-resourcegen-out';
 
 both().catch(e => {
     console.error(e);
@@ -20,7 +23,18 @@ async function icon() {
         return;
     }
     const candidate = candidates[0];
-    console.log('✅ ', 'using likely icon candidate    ',  '>>>', candidate);
+    console.log('✅ ', 'using icon source    ',  '>>>', candidate);
+
+    const targetCandidates = await iconTargetCandidates();
+    console.log('targets:')
+
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    for (const target of targetCandidates) {
+        console.log(' > ', target.path);
+        const outfile = target.path.replace(/\//g, '_');
+        const outPath = path.join(OUT_DIR, outfile);
+        await render(candidate, target.width, target.height, 8, outPath);
+    }
 }
 
 async function splash() {
@@ -30,7 +44,29 @@ async function splash() {
         return;
     }
     const candidate = candidates[0];
-    console.log('💦', 'using likely splash candidate  ', '>>>', candidate);
+    console.log('💦', 'using splash source  ', '>>>', candidate);
+}
+
+async function render(path, width, height, cornerRadiusPercent, outfilePath) {
+    const radiusW = width / (100/cornerRadiusPercent);
+    const radiusH = height / (100/cornerRadiusPercent);
+    const roundedCorners = Buffer.from(
+        `<svg><rect x="0" y="0" width="${width}" height="${height}" rx="${radiusW}" ry="${radiusH}"/></svg>`
+    );
+
+    const pipeline = sharp(path)
+        .resize(width, height);
+    if (cornerRadiusPercent) {
+        pipeline.composite([{
+                input: roundedCorners,
+                blend: 'dest-in'
+            }]);
+    } else {
+        pipeline.flatten();
+    }
+    return pipeline
+        .png()
+        .toFile(outfilePath);
 }
 
 // noinspection JSUnusedLocalSymbols
@@ -50,6 +86,19 @@ async function roundCorners(radius = 50) {
         .then(() => {
         })
         .catch(console.error);
+}
+
+async function iconTargetCandidates() {
+    const candidates = [];
+    const allImages = await findImages();
+    for (const imagePath of allImages) {
+        if (imagePath.toLowerCase().match(/.*icon.*(@[0-9]x|[0-9]{1,4})+\.png/)) {
+            const info = await readImageInfo(imagePath);
+            info.path = imagePath;
+            candidates.push(info);
+        }
+    }
+    return candidates;
 }
 
 /**
@@ -124,7 +173,7 @@ async function findImages() {
     return new Promise( (resolve, reject) => {
         glob('**/*+(.png|.jpg|.jpeg)', {
             nocase: true,
-            ignore: ['node_modules/**', 'test/**', 'build/**', 'coverage/**', '.vscode/**', '.idea/**', '.e2e/**']
+            ignore: ['node_modules/**', 'test/**', 'build/**', 'www/**', 'coverage/**', '.vscode/**', '.idea/**', '.e2e/**']
         }, (err, files)=>{
             if(err) {
                 reject(err);
