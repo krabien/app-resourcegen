@@ -7,7 +7,7 @@ resources for native Android, iOS, PWA, or web applications.
 
 It runs in two steps: icon and splash screen.
 
-For each step,, it will attempt to discover likely source material (e.g. `resources/icon1024.png`), 
+For each step, it will attempt to discover likely source material (e.g. `resources/icon1024.png`), 
 then a list of likely targets (e.g. `assets/icons/icon-128@2x.png`, `assets/icons/icon-128@3x.png`).
 
 Then it will generate copies of `resources/icon1024.png` 
