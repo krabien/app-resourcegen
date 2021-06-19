@@ -8,22 +8,22 @@ icon().then(() => {
 );
 
 async function icon() {
-    const iconCandidates = await iconSourceCandidates();
-    if (!iconCandidates || !iconCandidates.length) {
+    const candidates = await iconSourceCandidates();
+    if (!candidates || !candidates.length) {
         console.error('no likely icon source image candidates found');
         return;
     }
-    const iconCandidate = iconCandidates[0];
+    const iconCandidate = candidates[0];
     console.log('using likely icon candidate', iconCandidate);
 }
 
 async function splash() {
-    const iconCandidates = await iconSourceCandidates();
-    if (!iconCandidates || !iconCandidates.length) {
+    const candidates = await splashSourceCandidates();
+    if (!candidates || !candidates.length) {
         console.error('no likely splash source image candidates found');
         return;
     }
-    const iconCandidate = iconCandidates[0];
+    const iconCandidate = candidates[0];
     console.log('using likely icon candidate', iconCandidate);
 }
 
