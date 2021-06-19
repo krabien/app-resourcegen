@@ -33,7 +33,7 @@ async function icon() {
         console.log(' > ', target.path);
         const outfile = target.path.replace(/\//g, '_');
         const outPath = path.join(OUT_DIR, outfile);
-        await render(candidate, target.width, target.height, 8, outPath);
+        await render(candidate, target.width, target.height, 0, outPath);
     }
 }
 
