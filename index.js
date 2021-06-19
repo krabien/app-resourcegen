@@ -28,14 +28,14 @@ async function icon() {
     const targetCandidates = await iconTargetCandidates();
     console.log('targets:')
 
+    // create output directory
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    // create .gitignore file for our generated resources
+    fs.writeFileSync(path.join(OUT_DIR, '.gitignore'),  '**\n');
     for (const target of targetCandidates) {
         console.log(' > ', target.path);
         let outfile = target.path;
 
-        // create output directory
-        fs.mkdirSync(OUT_DIR, { recursive: true });
-        // create .gitignore file for our generated resources
-        fs.writeFileSync(path.join(OUT_DIR, '.gitignore'),  '**\n');
         const outPath = path.join(OUT_DIR, outfile);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
         await render(candidate, target.width, target.height, 0, outPath);
