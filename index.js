@@ -173,7 +173,7 @@ async function findImages() {
     return new Promise( (resolve, reject) => {
         glob('**/*+(.png|.jpg|.jpeg)', {
             nocase: true,
-            ignore: ['node_modules/**', 'test/**', 'build/**', 'www/**', 'coverage/**', '.vscode/**', '.idea/**', '.e2e/**']
+            ignore: [OUT_DIR+'/**', 'node_modules/**', 'test/**', 'build/**', 'www/**', 'coverage/**', '.vscode/**', '.idea/**', '.e2e/**']
         }, (err, files)=>{
             if(err) {
                 reject(err);
