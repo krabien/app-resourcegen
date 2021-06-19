@@ -4,10 +4,14 @@ const fs = require('fs');
 const sharp = require('sharp');
 const glob = require('glob');
 
-icon().then(() => {
-        splash().then();
-    }
-);
+both().catch(e => {
+    console.error(e);
+});
+
+async function both() {
+    await icon();
+    await splash();
+}
 
 async function icon() {
     const candidates = await iconSourceCandidates();
@@ -15,8 +19,8 @@ async function icon() {
         console.error('no likely icon source image candidates found');
         return;
     }
-    const iconCandidate = candidates[0];
-    console.log('using likely icon candidate', iconCandidate);
+    const candidate = candidates[0];
+    console.log('✅ ', 'using likely icon candidate    ',  '>>>', candidate);
 }
 
 async function splash() {
@@ -25,8 +29,8 @@ async function splash() {
         console.error('no likely splash source image candidates found');
         return;
     }
-    const iconCandidate = candidates[0];
-    console.log('using likely icon candidate', iconCandidate);
+    const candidate = candidates[0];
+    console.log('💦', 'using likely splash candidate  ', '>>>', candidate);
 }
 
 // noinspection JSUnusedLocalSymbols
@@ -56,9 +60,13 @@ async function iconSourceCandidates() {
     const candidates = [];
     const allImages = await findImages();
     for (const imagePath of allImages) {
-        const info = await readImageInfo(imagePath);
-        if (info.width === info.height && info.width > 1023) {
-            candidates.push(imagePath);
+        try {
+            const info = await readImageInfo(imagePath);
+            if (info.width === info.height && info.width > 1023) {
+                candidates.push(imagePath);
+            }
+        } catch (e) {
+            console.error('  🚫', imagePath, e);
         }
     }
     return candidates.sort( (a, b) => {
@@ -74,9 +82,13 @@ async function splashSourceCandidates() {
     const candidates = [];
     const allImages = await findImages();
     for (const imagePath of allImages) {
-        const info = await readImageInfo(imagePath);
-        if (info.width === info.height && info.width > 1200) {
-            candidates.push(imagePath);
+        try {
+            const info = await readImageInfo(imagePath);
+            if (info.width === info.height && info.width > 1200) {
+                candidates.push(imagePath);
+            }
+        } catch (e) {
+            console.error('  🚫', imagePath, e);
         }
     }
     return candidates.sort( (a, b) => {
@@ -99,19 +111,21 @@ function scoreSplash(filepath) {
 }
 
 async function readImageInfo(imagePath) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         fs.createReadStream(imagePath).pipe(
             sharp()
-                .on('info', function(info) {
-                    resolve(info);
-                })
+                .on('info', resolve)
+                .on('error', reject)
         ).read();
     });
 }
 
 async function findImages() {
     return new Promise( (resolve, reject) => {
-        glob('**/*+(.png|.jpg|.jpeg)', { nocase: true }, (err, files)=>{
+        glob('**/*+(.png|.jpg|.jpeg)', {
+            nocase: true,
+            ignore: ['node_modules/**', 'test/**', 'build/**', 'coverage/**', '.vscode/**', '.idea/**', '.e2e/**']
+        }, (err, files)=>{
             if(err) {
                 reject(err);
             } else {
