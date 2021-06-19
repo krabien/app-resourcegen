@@ -17,39 +17,52 @@ async function both() {
 }
 
 async function icon() {
-    const candidates = await iconSourceCandidates();
-    if (!candidates || !candidates.length) {
+    const sourceCandidates = await iconSourceCandidates();
+    if (!sourceCandidates || !sourceCandidates.length) {
         console.error('no likely icon source image candidates found');
         return;
     }
-    const candidate = candidates[0];
-    console.log('✅ ', 'using icon source    ',  '>>>', candidate);
-
+    const source = sourceCandidates[0];
+    console.log('✅ ', 'using icon source    ',  '>>>', source);
     const targetCandidates = await iconTargetCandidates();
-    console.log('targets:')
+    if (!targetCandidates.length) {
+        console.error('   no icon target candidates found');
+    }
+    return process(source, targetCandidates);
+}
 
+async function splash() {
+    const sourceCandidates = await splashSourceCandidates();
+    if (!sourceCandidates || !sourceCandidates.length) {
+        console.error('no likely splash source image candidates found');
+        return;
+    }
+    const source = sourceCandidates[0];
+    console.log('💦', 'using splash source  ', '>>>', source);
+    const targetCandidates = await splashTargetCandidates();
+    if (!targetCandidates.length) {
+        console.error('   no splash target candidates found');
+    }
+    return process(source, targetCandidates);
+}
+
+async function process(source, targetCandidates) {
+    console.log('targets:');
     // create output directory
     fs.mkdirSync(OUT_DIR, { recursive: true });
     // create .gitignore file for our generated resources
-    fs.writeFileSync(path.join(OUT_DIR, '.gitignore'),  '**\n');
+    const gitignore = path.join(OUT_DIR, '.gitignore');
+    if (!fs.existsSync(gitignore)) {
+        fs.writeFileSync(path.join(OUT_DIR, '.gitignore'), '**\n');
+    }
     for (const target of targetCandidates) {
         console.log(' > ', target.path);
         let outfile = target.path;
 
         const outPath = path.join(OUT_DIR, outfile);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
-        await render(candidate, target.width, target.height, 0, outPath);
+        await render(source, target.width, target.height, 0, outPath);
     }
-}
-
-async function splash() {
-    const candidates = await splashSourceCandidates();
-    if (!candidates || !candidates.length) {
-        console.error('no likely splash source image candidates found');
-        return;
-    }
-    const candidate = candidates[0];
-    console.log('💦', 'using splash source  ', '>>>', candidate);
 }
 
 async function render(path, width, height, cornerRadiusPercent, outfilePath) {
@@ -70,27 +83,7 @@ async function render(path, width, height, cornerRadiusPercent, outfilePath) {
         pipeline.flatten();
     }
     return pipeline
-        .png()
         .toFile(outfilePath);
-}
-
-// noinspection JSUnusedLocalSymbols
-async function roundCorners(radius = 50) {
-    const roundedCorners = Buffer.from(
-        `<svg><rect x="0" y="0" width="1024" height="1024" rx="${radius}" ry="${radius}"/></svg>`
-    );
-
-    sharp(roundedCorners)
-        .composite([{
-            input: roundedCorners,
-            blend: 'dest-in'
-        }])
-        .flatten()
-        .png()
-        .toFile('output.png')
-        .then(() => {
-        })
-        .catch(console.error);
 }
 
 async function iconTargetCandidates() {
@@ -98,6 +91,19 @@ async function iconTargetCandidates() {
     const allImages = await findImages();
     for (const imagePath of allImages) {
         if (imagePath.toLowerCase().match(/.*icon.*(@[0-9]x|[0-9]{1,4})+\.png/)) {
+            const info = await readImageInfo(imagePath);
+            info.path = imagePath;
+            candidates.push(info);
+        }
+    }
+    return candidates;
+}
+
+async function splashTargetCandidates() {
+    const candidates = [];
+    const allImages = await findImages();
+    for (const imagePath of allImages) {
+        if (imagePath.toLowerCase().match(/.*splash.*(@[0-9]x|[0-9]{1,4})+\.(png|jpg)/)) {
             const info = await readImageInfo(imagePath);
             info.path = imagePath;
             candidates.push(info);
